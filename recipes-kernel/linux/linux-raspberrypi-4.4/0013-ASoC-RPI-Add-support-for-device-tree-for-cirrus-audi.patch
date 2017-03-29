@@ -1,0 +1,210 @@
+From 6e726545ea55cdc448dcfdd5b616bcc460148376 Mon Sep 17 00:00:00 2001
+From: bsapthagiri <sapthagiri.baratam@incubesol.com>
+Date: Tue, 6 Jan 2015 18:19:48 +0530
+Subject: [PATCH 13/25] ASoC: RPI: Add support for device tree for cirrus audio
+ card
+
+Removed changes to bcm2708.c which are only needed for non-DT kernels
+---
+ arch/arm/boot/dts/overlays/Makefile                |   1 +
+ .../dts/overlays/rpi-cirrus-wm5102-overlay.dts     | 130 +++++++++++++++++++++
+ sound/soc/bcm/rpi-cirrus-sound-pi.c                |  23 ++++
+ 3 files changed, 154 insertions(+)
+ create mode 100644 arch/arm/boot/dts/overlays/rpi-cirrus-wm5102-overlay.dts
+
+diff --git a/arch/arm/boot/dts/overlays/Makefile b/arch/arm/boot/dts/overlays/Makefile
+index 7e740c894436..459c720f292f 100644
+--- a/arch/arm/boot/dts/overlays/Makefile
++++ b/arch/arm/boot/dts/overlays/Makefile
+@@ -66,6 +66,7 @@ dtbo-$(RPI_DT_OVERLAYS) += pwm-2chan.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += qca7000.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += raspidac3.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += rpi-backlight.dtbo
++dtbo-$(RPI_DT_OVERLAYS) += rpi-cirrus-wm5102.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += rpi-dac.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += rpi-display.dtbo
+ dtbo-$(RPI_DT_OVERLAYS) += rpi-ft5406.dtbo
+diff --git a/arch/arm/boot/dts/overlays/rpi-cirrus-wm5102-overlay.dts b/arch/arm/boot/dts/overlays/rpi-cirrus-wm5102-overlay.dts
+new file mode 100644
+index 000000000000..747fff162675
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/rpi-cirrus-wm5102-overlay.dts
+@@ -0,0 +1,130 @@
++// Definitions for Cirrus audio card
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "brcm,bcm2708";
++
++	fragment@0 {
++		target-path = "/";
++		__overlay__ {
++			aliases {
++				ldo0 = &ldo0;
++				ldo1 = &ldo1;
++			};
++		};
++	};
++
++	fragment@1 {
++		target = <&sound>;
++		__overlay__ {
++			compatible = "wlf,rpi-wm5102";
++			i2s-controller = <&i2s>;
++			status = "okay";
++		};
++	};
++
++	fragment@2 {
++		target = <&i2s>;
++		__overlay__ {
++			status = "okay";
++		};
++	};
++
++	fragment@3 {
++		target = <&gpio>;
++		__overlay__ {
++			wlf_pins: wlf_pins {
++				brcm,pins = <17 22 27>;
++				brcm,function = <1 1 0>;
++			};
++		};
++	};
++
++	fragment@4 {
++		target-path = "/soc";
++		__overlay__ {
++
++			ldo1: ldo1 {
++				compatible = "regulator-fixed";
++				regulator-name = "DC_5V";
++				regulator-min-microvolt = <5000000>;
++				regulator-max-microvolt = <5000000>;
++				enable-active-high;
++				regulator-always-on;
++			};
++
++			ldo0: ldo0 {
++				compatible = "regulator-fixed";
++				regulator-name = "DC_1V8";
++				regulator-min-microvolt = <1800000>;
++				regulator-max-microvolt = <1800000>;
++				enable-active-high;
++				regulator-always-on;
++			};
++		};
++	};
++
++	fragment@5 {
++		target = <&spi0>;
++		__overlay__ {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "okay";
++
++			spidev@1{
++				status = "disabled";
++			};
++
++			wm5102@1{
++				compatible = "wlf,wm5102";
++				reg = <1>;
++				#address-cells = <1>;
++				#size-cells = <0>;
++				spi-max-frequency = <500000>;
++
++				LDOVDD-supply = <&ldo0>;
++				AVDD-supply = <&ldo0>;
++				DBVDD1-supply = <&ldo0>;
++				DBVDD2-supply = <&ldo0>;
++				DBVDD3-supply = <&ldo0>;
++				CPVDD-supply = <&ldo0>;
++				SPKVDDL-supply = <&ldo1>;
++				SPKVDDR-supply = <&ldo1>;
++
++				wlf,reset = <&gpio 17 0>;
++				wlf,ldoena = <&gpio 22 0>;
++				wlf,gpio-defaults = <
++					0x000fffff
++					0x000fffff
++					0x000fffff
++					0x000fffff
++					0x000fffff
++				>;
++				wlf,micd-configs = <0 1 0>;
++				wlf,dmic-ref = <0 2 0 0>;
++				wlf,clk32k-src = <3>;
++				wlf,inmode = <0 2 1 0>;
++				status = "okay";
++			};
++		};
++	};
++
++	fragment@6 {
++		target = <&i2c1>;
++		__overlay__ {
++			status = "okay";
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			wm8804@3a {
++				#sound-dai-cells = <0>;
++				compatible = "wlf,wm8804";
++				reg = <0x3a>;
++				status = "okay";
++				PVDD-supply = <&ldo0>;
++				DVDD-supply = <&ldo0>;
++			};
++		};
++	};
++};
+diff --git a/sound/soc/bcm/rpi-cirrus-sound-pi.c b/sound/soc/bcm/rpi-cirrus-sound-pi.c
+index 08090b3d6662..cebde8ef16cb 100644
+--- a/sound/soc/bcm/rpi-cirrus-sound-pi.c
++++ b/sound/soc/bcm/rpi-cirrus-sound-pi.c
+@@ -586,6 +586,20 @@ static int snd_rpi_wsp_probe(struct platform_device *pdev)
+ 
+ 	snd_soc_card_set_drvdata(&snd_rpi_wsp, wm5102);
+ 
++	if (pdev->dev.of_node) {
++	    struct device_node *i2s_node;
++	    struct snd_soc_dai_link *dai = &snd_rpi_wsp_dai[0];
++	    i2s_node = of_parse_phandle(pdev->dev.of_node,
++					"i2s-controller", 0);
++
++	    if (i2s_node) {
++		dai->cpu_dai_name = NULL;
++		dai->cpu_of_node = i2s_node;
++		dai->platform_name = NULL;
++		dai->platform_of_node = i2s_node;
++	    }
++	}
++
+ 	snd_rpi_wsp.dev = &pdev->dev;
+ 	ret = snd_soc_register_card(&snd_rpi_wsp);
+ 	if (ret) {
+@@ -607,10 +621,19 @@ static int snd_rpi_wsp_remove(struct platform_device *pdev)
+ 	return 0;
+ }
+ 
++#ifdef CONFIG_OF
++static const struct of_device_id snd_rpi_wsp_of_match[] = {
++		{ .compatible = "wlf,rpi-wm5102", },
++		{},
++};
++MODULE_DEVICE_TABLE(of, snd_rpi_wsp_of_match);
++#endif /* CONFIG_OF */
++
+ static struct platform_driver snd_rpi_wsp_driver = {
+ 	.driver = {
+ 		.name   = "snd-rpi-wsp",
+ 		.owner  = THIS_MODULE,
++		.of_match_table = of_match_ptr(snd_rpi_wsp_of_match),
+ 	},
+ 	.probe	  = snd_rpi_wsp_probe,
+ 	.remove	 = snd_rpi_wsp_remove,
+-- 
+2.10.1
+

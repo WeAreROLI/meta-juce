@@ -1,0 +1,32 @@
+From 9ad52cbe9677d29676ba744c45130ee854440f9c Mon Sep 17 00:00:00 2001
+From: Charles Keepax <ckeepax@opensource.wolfsonmicro.com>
+Date: Thu, 3 Dec 2015 18:15:07 +0000
+Subject: [PATCH 02/25] ASoC: arizona: Fix type of clock rate pointer in
+ arizona_set_sysclk
+
+Both the sysclk and asyncclk members of arizona_priv are signed by we
+refer to them through an unsigned pointer. This patch fixes this small
+harmless error.
+
+Signed-off-by: Charles Keepax <ckeepax@opensource.wolfsonmicro.com>
+Signed-off-by: Mark Brown <broonie@kernel.org>
+---
+ sound/soc/codecs/arizona.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/sound/soc/codecs/arizona.c b/sound/soc/codecs/arizona.c
+index 9653352d10f0..c63b96641dac 100644
+--- a/sound/soc/codecs/arizona.c
++++ b/sound/soc/codecs/arizona.c
+@@ -1095,7 +1095,7 @@ int arizona_set_sysclk(struct snd_soc_codec *codec, int clk_id,
+ 	unsigned int reg;
+ 	unsigned int mask = ARIZONA_SYSCLK_FREQ_MASK | ARIZONA_SYSCLK_SRC_MASK;
+ 	unsigned int val = source << ARIZONA_SYSCLK_SRC_SHIFT;
+-	unsigned int *clk;
++	int *clk;
+ 
+ 	switch (clk_id) {
+ 	case ARIZONA_CLK_SYSCLK:
+-- 
+2.10.1
+

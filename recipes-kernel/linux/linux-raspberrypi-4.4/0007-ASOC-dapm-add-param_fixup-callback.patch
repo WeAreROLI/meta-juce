@@ -1,0 +1,146 @@
+From 572ed073528125bc2072a965282d77cbcb484475 Mon Sep 17 00:00:00 2001
+From: nikesh <Nikesh.Oswal@wolfsonmicro.com>
+Date: Tue, 19 Nov 2013 11:20:59 +0000
+Subject: [PATCH 07/25] ASOC: dapm: add param_fixup callback
+
+dai-link params for codec-codec links were fixed.
+The fixed link between codec and another chip which
+may be another codec, baseband, bluetooth codec etc
+may require run time configuaration changes.
+This change provides an optional callback to modify
+these params.
+
+Change-Id: Iad6ee3951bc4e8b8bc519c62642a2b4bcd949c18
+Signed-off-by: nikesh <Nikesh.Oswal@wolfsonmicro.com>
+---
+ include/sound/soc-dapm.h |  7 ++++---
+ include/sound/soc.h      |  4 +++-
+ sound/soc/soc-core.c     |  4 ++--
+ sound/soc/soc-dapm.c     | 21 +++++++++++++++++----
+ 4 files changed, 26 insertions(+), 10 deletions(-)
+
+diff --git a/include/sound/soc-dapm.h b/include/sound/soc-dapm.h
+index 95a937eafb79..8262719beebe 100644
+--- a/include/sound/soc-dapm.h
++++ b/include/sound/soc-dapm.h
+@@ -383,10 +383,11 @@ int snd_soc_dapm_new_dai_widgets(struct snd_soc_dapm_context *dapm,
+ int snd_soc_dapm_link_dai_widgets(struct snd_soc_card *card);
+ void snd_soc_dapm_connect_dai_link_widgets(struct snd_soc_card *card);
+ int snd_soc_dapm_new_pcm(struct snd_soc_card *card,
+-			 const struct snd_soc_pcm_stream *params,
++			 struct snd_soc_pcm_stream *params,
+ 			 unsigned int num_params,
+ 			 struct snd_soc_dapm_widget *source,
+-			 struct snd_soc_dapm_widget *sink);
++			 struct snd_soc_dapm_widget *sink,
++			 void *priv);
+ 
+ /* dapm path setup */
+ int snd_soc_dapm_new_widgets(struct snd_soc_card *card);
+@@ -553,7 +554,7 @@ struct snd_soc_dapm_widget {
+ 
+ 	void *priv;				/* widget specific data */
+ 	struct regulator *regulator;		/* attached regulator */
+-	const struct snd_soc_pcm_stream *params; /* params for dai links */
++	struct snd_soc_pcm_stream *params; /* params for dai links */
+ 	unsigned int num_params; /* number of params for dai links */
+ 	unsigned int params_select; /* currently selected param for dai link */
+ 
+diff --git a/include/sound/soc.h b/include/sound/soc.h
+index fb955e69a78e..bbdc05d4df21 100644
+--- a/include/sound/soc.h
++++ b/include/sound/soc.h
+@@ -989,7 +989,9 @@ struct snd_soc_dai_link {
+ 	struct device_node *platform_of_node;
+ 	int be_id;	/* optional ID for machine driver BE identification */
+ 
+-	const struct snd_soc_pcm_stream *params;
++	struct snd_soc_pcm_stream *params;
++	/* optional params re-writing for dai links */
++	int (*params_fixup)(struct snd_soc_dapm_widget *w, int event);
+ 	unsigned int num_params;
+ 
+ 	unsigned int dai_fmt;           /* format to set on init */
+diff --git a/sound/soc/soc-core.c b/sound/soc/soc-core.c
+index a1305f827a98..31f36e6d122c 100644
+--- a/sound/soc/soc-core.c
++++ b/sound/soc/soc-core.c
+@@ -1295,7 +1295,7 @@ static int soc_link_dai_widgets(struct snd_soc_card *card,
+ 	if (play_w && capture_w) {
+ 		ret = snd_soc_dapm_new_pcm(card, dai_link->params,
+ 					   dai_link->num_params, capture_w,
+-					   play_w);
++					   play_w, dai_link);
+ 		if (ret != 0) {
+ 			dev_err(card->dev, "ASoC: Can't link %s to %s: %d\n",
+ 				play_w->name, capture_w->name, ret);
+@@ -1308,7 +1308,7 @@ static int soc_link_dai_widgets(struct snd_soc_card *card,
+ 	if (play_w && capture_w) {
+ 		ret = snd_soc_dapm_new_pcm(card, dai_link->params,
+ 					   dai_link->num_params, capture_w,
+-					   play_w);
++					   play_w, dai_link);
+ 		if (ret != 0) {
+ 			dev_err(card->dev, "ASoC: Can't link %s to %s: %d\n",
+ 				play_w->name, capture_w->name, ret);
+diff --git a/sound/soc/soc-dapm.c b/sound/soc/soc-dapm.c
+index afb70a5d4fd3..104888d86c6f 100644
+--- a/sound/soc/soc-dapm.c
++++ b/sound/soc/soc-dapm.c
+@@ -3450,11 +3450,12 @@ static int snd_soc_dai_link_event(struct snd_soc_dapm_widget *w,
+ {
+ 	struct snd_soc_dapm_path *source_p, *sink_p;
+ 	struct snd_soc_dai *source, *sink;
+-	const struct snd_soc_pcm_stream *config = w->params + w->params_select;
++	struct snd_soc_pcm_stream *config = w->params + w->params_select;
++	struct snd_soc_dai_link *dai_link = w->priv;
+ 	struct snd_pcm_substream substream;
+ 	struct snd_pcm_hw_params *params = NULL;
+ 	u64 fmt;
+-	int ret;
++	int ret = 0;
+ 
+ 	if (WARN_ON(!config) ||
+ 	    WARN_ON(list_empty(&w->edges[SND_SOC_DAPM_DIR_OUT]) ||
+@@ -3472,6 +3473,16 @@ static int snd_soc_dai_link_event(struct snd_soc_dapm_widget *w,
+ 	source = source_p->source->priv;
+ 	sink = sink_p->sink->priv;
+ 
++	if (dai_link && dai_link->params_fixup) {
++		ret = dai_link->params_fixup(w, event);
++		if (ret < 0) {
++			dev_err(w->dapm->dev,
++				"ASoC: params_fixup for dai link widget failed %d\n",
++				ret);
++			goto out;
++		}
++	}
++
+ 	/* Be a little careful as we don't want to overflow the mask array */
+ 	if (config->formats) {
+ 		fmt = ffs(config->formats) - 1;
+@@ -3601,10 +3612,11 @@ static int snd_soc_dapm_dai_link_put(struct snd_kcontrol *kcontrol,
+ }
+ 
+ int snd_soc_dapm_new_pcm(struct snd_soc_card *card,
+-			 const struct snd_soc_pcm_stream *params,
++			 struct snd_soc_pcm_stream *params,
+ 			 unsigned int num_params,
+ 			 struct snd_soc_dapm_widget *source,
+-			 struct snd_soc_dapm_widget *sink)
++			 struct snd_soc_dapm_widget *sink,
++			 void *priv)
+ {
+ 	struct snd_soc_dapm_widget template;
+ 	struct snd_soc_dapm_widget *w;
+@@ -3706,6 +3718,7 @@ int snd_soc_dapm_new_pcm(struct snd_soc_card *card,
+ 
+ 	w->params = params;
+ 	w->num_params = num_params;
++	w->priv = priv;
+ 
+ 	ret = snd_soc_dapm_add_path(&card->dapm, source, w, NULL, NULL);
+ 	if (ret)
+-- 
+2.10.1
+

@@ -1,0 +1,81 @@
+From ad7e3255b855059c97731d46a73a7e6b0629f49c Mon Sep 17 00:00:00 2001
+From: Matthias Reichl <hias@horus.com>
+Date: Wed, 27 Apr 2016 19:13:55 +0200
+Subject: [PATCH 25/25] cirrus: reorder devicetree fragments so card comes last
+
+---
+ .../dts/overlays/rpi-cirrus-wm5102-overlay.dts     | 26 +++++++++++-----------
+ 1 file changed, 13 insertions(+), 13 deletions(-)
+
+diff --git a/arch/arm/boot/dts/overlays/rpi-cirrus-wm5102-overlay.dts b/arch/arm/boot/dts/overlays/rpi-cirrus-wm5102-overlay.dts
+index 3cb63a59ed32..4de09b1a0fad 100644
+--- a/arch/arm/boot/dts/overlays/rpi-cirrus-wm5102-overlay.dts
++++ b/arch/arm/boot/dts/overlays/rpi-cirrus-wm5102-overlay.dts
+@@ -16,22 +16,13 @@
+ 	};
+ 
+ 	fragment@1 {
+-		target = <&sound>;
+-		__overlay__ {
+-			compatible = "wlf,rpi-wm5102";
+-			i2s-controller = <&i2s>;
+-			status = "okay";
+-		};
+-	};
+-
+-	fragment@2 {
+ 		target = <&i2s>;
+ 		__overlay__ {
+ 			status = "okay";
+ 		};
+ 	};
+ 
+-	fragment@3 {
++	fragment@2 {
+ 		target = <&gpio>;
+ 		__overlay__ {
+ 			wlf_pins: wlf_pins {
+@@ -41,7 +32,7 @@
+ 		};
+ 	};
+ 
+-	fragment@4 {
++	fragment@3 {
+ 		target-path = "/soc";
+ 		__overlay__ {
+ 
+@@ -65,7 +56,7 @@
+ 		};
+ 	};
+ 
+-	fragment@5 {
++	fragment@4 {
+ 		target = <&spi0>;
+ 		__overlay__ {
+ 			#address-cells = <1>;
+@@ -117,7 +108,7 @@
+ 		};
+ 	};
+ 
+-	fragment@6 {
++	fragment@5 {
+ 		target = <&i2c1>;
+ 		__overlay__ {
+ 			status = "okay";
+@@ -135,4 +126,13 @@
+ 			};
+ 		};
+ 	};
++
++	fragment@6 {
++		target = <&sound>;
++		__overlay__ {
++			compatible = "wlf,rpi-wm5102";
++			i2s-controller = <&i2s>;
++			status = "okay";
++		};
++	};
+ };
+-- 
+2.10.1
+

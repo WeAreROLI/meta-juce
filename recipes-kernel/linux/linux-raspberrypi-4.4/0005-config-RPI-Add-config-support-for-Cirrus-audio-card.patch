@@ -1,0 +1,60 @@
+From bc691980cef859057ef734cb601a1bca7aad217a Mon Sep 17 00:00:00 2001
+From: bsapthagiri <sapthagiri.baratam@incubesol.com>
+Date: Thu, 18 Dec 2014 20:01:58 +0530
+Subject: [PATCH 05/25] config: RPI: Add config support for Cirrus audio card
+
+Change-Id: If8359927d4911511df5da01d556e5097b7adcaf8
+Signed-off-by: bsapthagiri <sapthagiri.baratam@incubesol.com>
+Signed-off-by: ajit.pandey <ajit.pandey@incubesol.com>
+---
+ arch/arm/configs/bcm2709_defconfig | 4 ++++
+ arch/arm/configs/bcmrpi_defconfig  | 4 ++++
+ 2 files changed, 8 insertions(+)
+
+diff --git a/arch/arm/configs/bcm2709_defconfig b/arch/arm/configs/bcm2709_defconfig
+index 9a7317900c40..2463de2b5519 100644
+--- a/arch/arm/configs/bcm2709_defconfig
++++ b/arch/arm/configs/bcm2709_defconfig
+@@ -653,6 +653,9 @@ CONFIG_STMPE_SPI=y
+ CONFIG_MFD_ARIZONA_I2C=m
+ CONFIG_MFD_ARIZONA_SPI=m
+ CONFIG_MFD_WM5102=y
++CONFIG_REGULATOR=y
++CONFIG_REGULATOR_FIXED_VOLTAGE=m
++CONFIG_REGULATOR_ARIZONA=m
+ CONFIG_MEDIA_SUPPORT=m
+ CONFIG_MEDIA_CAMERA_SUPPORT=y
+ CONFIG_MEDIA_ANALOG_TV_SUPPORT=y
+@@ -860,6 +863,7 @@ CONFIG_SND_BCM2708_SOC_HIFIBERRY_DAC=m
+ CONFIG_SND_BCM2708_SOC_HIFIBERRY_DACPLUS=m
+ CONFIG_SND_BCM2708_SOC_HIFIBERRY_DIGI=m
+ CONFIG_SND_BCM2708_SOC_HIFIBERRY_AMP=m
++CONFIG_SND_BCM2708_SOC_RPI_CODEC_WSP=m
+ CONFIG_SND_BCM2708_SOC_RPI_DAC=m
+ CONFIG_SND_BCM2708_SOC_RPI_PROTO=m
+ CONFIG_SND_BCM2708_SOC_JUSTBOOM_DAC=m
+diff --git a/arch/arm/configs/bcmrpi_defconfig b/arch/arm/configs/bcmrpi_defconfig
+index 41c549bd3274..bd6b10235a66 100644
+--- a/arch/arm/configs/bcmrpi_defconfig
++++ b/arch/arm/configs/bcmrpi_defconfig
+@@ -645,6 +645,9 @@ CONFIG_STMPE_SPI=y
+ CONFIG_MFD_ARIZONA_I2C=m
+ CONFIG_MFD_ARIZONA_SPI=m
+ CONFIG_MFD_WM5102=y
++CONFIG_REGULATOR=y
++CONFIG_REGULATOR_FIXED_VOLTAGE=m
++CONFIG_REGULATOR_ARIZONA=m
+ CONFIG_MEDIA_SUPPORT=m
+ CONFIG_MEDIA_CAMERA_SUPPORT=y
+ CONFIG_MEDIA_ANALOG_TV_SUPPORT=y
+@@ -852,6 +855,7 @@ CONFIG_SND_BCM2708_SOC_HIFIBERRY_DAC=m
+ CONFIG_SND_BCM2708_SOC_HIFIBERRY_DACPLUS=m
+ CONFIG_SND_BCM2708_SOC_HIFIBERRY_DIGI=m
+ CONFIG_SND_BCM2708_SOC_HIFIBERRY_AMP=m
++CONFIG_SND_BCM2708_SOC_RPI_CODEC_WSP=m
+ CONFIG_SND_BCM2708_SOC_RPI_DAC=m
+ CONFIG_SND_BCM2708_SOC_RPI_PROTO=m
+ CONFIG_SND_BCM2708_SOC_JUSTBOOM_DAC=m
+-- 
+2.10.1
+

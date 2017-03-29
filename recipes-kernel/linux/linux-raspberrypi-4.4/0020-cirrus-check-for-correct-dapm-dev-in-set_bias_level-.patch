@@ -1,0 +1,56 @@
+From 98161cb3c5eddc5f1c87b094addcb0bff39993aa Mon Sep 17 00:00:00 2001
+From: Matthias Reichl <hias@horus.com>
+Date: Sat, 23 Jan 2016 02:34:54 +0100
+Subject: [PATCH 20/25] cirrus: check for correct dapm->dev in set_bias_level
+ functions
+
+This avoids setting up the clocks multiple times.
+---
+ sound/soc/bcm/rpi-cirrus-sound-pi.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/sound/soc/bcm/rpi-cirrus-sound-pi.c b/sound/soc/bcm/rpi-cirrus-sound-pi.c
+index bc5a14ba4de9..832602a820d9 100644
+--- a/sound/soc/bcm/rpi-cirrus-sound-pi.c
++++ b/sound/soc/bcm/rpi-cirrus-sound-pi.c
+@@ -133,6 +133,7 @@ static int rpi_set_bias_level(struct snd_soc_card *card,
+ {
+ 	struct snd_soc_pcm_runtime *wm5102_rtd;
+ 	struct snd_soc_codec *wm5102_codec;
++	struct snd_soc_dai *wm5102_codec_dai;
+ 	struct wm5102_machine_priv *priv = snd_soc_card_get_drvdata(card);
+ 
+ 	int ret;
+@@ -145,6 +146,10 @@ static int rpi_set_bias_level(struct snd_soc_card *card,
+ 		return -EFAULT;
+ 	}
+ 	wm5102_codec = wm5102_rtd->codec;
++	wm5102_codec_dai = wm5102_rtd->codec_dai;
++
++	if (dapm->dev != wm5102_codec_dai->dev)
++		return 0;
+ 
+ 	switch (level) {
+ 	case SND_SOC_BIAS_OFF:
+@@ -176,6 +181,7 @@ static int rpi_set_bias_level_post(struct snd_soc_card *card,
+ {
+ 	struct snd_soc_pcm_runtime *wm5102_rtd;
+ 	struct snd_soc_codec *wm5102_codec;
++	struct snd_soc_dai *wm5102_codec_dai;
+ 
+ 	wm5102_rtd = snd_soc_get_pcm_runtime(card, card->dai_link[DAI_WM5102].name);
+ 	if (!wm5102_rtd) {
+@@ -183,6 +189,10 @@ static int rpi_set_bias_level_post(struct snd_soc_card *card,
+ 		return -EFAULT;
+ 	}
+ 	wm5102_codec = wm5102_rtd->codec;
++	wm5102_codec_dai = wm5102_rtd->codec_dai;
++
++	if (dapm->dev != wm5102_codec_dai->dev)
++		return 0;
+ 
+ 	switch (level) {
+ 	case SND_SOC_BIAS_STANDBY:
+-- 
+2.10.1
+

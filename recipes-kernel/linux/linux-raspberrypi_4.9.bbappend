@@ -1,0 +1,7 @@
+FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}-4.9:"
+
+LINUX_VERSION = "4.9.13"
+
+SRCREV = "935c7ce84c982a26f567a03a58a1537424569938"
+
+SRC_URI += "file://patch-4.9.13-rt12.patch"

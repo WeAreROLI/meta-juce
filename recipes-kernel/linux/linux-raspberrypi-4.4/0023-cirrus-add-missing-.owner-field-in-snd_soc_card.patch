@@ -1,0 +1,26 @@
+From 59cfc99e430c21f7a9059de802b04700c6f44e78 Mon Sep 17 00:00:00 2001
+From: Matthias Reichl <hias@horus.com>
+Date: Tue, 23 Feb 2016 18:05:10 +0100
+Subject: [PATCH 23/25] cirrus: add missing .owner field in snd_soc_card
+
+This prevents module unloading while the card is in use (which
+leads to a kernel crash) and makes ALSA slot ordering working.
+---
+ sound/soc/bcm/rpi-cirrus-sound-pi.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/sound/soc/bcm/rpi-cirrus-sound-pi.c b/sound/soc/bcm/rpi-cirrus-sound-pi.c
+index c856eae6044b..eeb41afd5688 100644
+--- a/sound/soc/bcm/rpi-cirrus-sound-pi.c
++++ b/sound/soc/bcm/rpi-cirrus-sound-pi.c
+@@ -546,6 +546,7 @@ static int snd_rpi_wsp_late_probe(struct snd_soc_card *card)
+ /* audio machine driver */
+ static struct snd_soc_card snd_rpi_wsp = {
+ 	.name		= "snd_rpi_wsp",
++	.owner		= THIS_MODULE,
+ 	.dai_link	= snd_rpi_wsp_dai,
+ 	.num_links	= ARRAY_SIZE(snd_rpi_wsp_dai),
+ 	.late_probe = snd_rpi_wsp_late_probe,
+-- 
+2.10.1
+

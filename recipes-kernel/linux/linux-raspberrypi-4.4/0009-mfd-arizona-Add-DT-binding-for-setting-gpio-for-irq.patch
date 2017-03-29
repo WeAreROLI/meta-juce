@@ -1,0 +1,28 @@
+From e310c4fbb339df61300c5bc2fdcc872a51a3b50c Mon Sep 17 00:00:00 2001
+From: bsapthagiri <sapthagiri.baratam@incubesol.com>
+Date: Tue, 3 Mar 2015 17:57:00 +0530
+Subject: [PATCH 09/25] mfd: arizona: Add DT binding for setting gpio for irq
+
+Change-Id: I23f85562f8cbdbd02bcb1d8e64508022ed3b9550
+Signed-off-by: bsapthagiri <sapthagiri.baratam@incubesol.com>
+---
+ drivers/mfd/arizona-core.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/drivers/mfd/arizona-core.c b/drivers/mfd/arizona-core.c
+index d474732cc65c..658ae26b93b9 100644
+--- a/drivers/mfd/arizona-core.c
++++ b/drivers/mfd/arizona-core.c
+@@ -852,6 +852,9 @@ static int arizona_of_get_core_pdata(struct arizona *arizona)
+ 		count++;
+ 	}
+ 
++	arizona_of_read_u32(arizona, "wlf,irq_gpio", false,
++				&pdata->irq_gpio);
++
+ 	return 0;
+ }
+ 
+-- 
+2.10.1
+

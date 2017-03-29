@@ -1,0 +1,43 @@
+From 4e9b69bdbdf8d27938ca3f8dab78d9ae12e552f5 Mon Sep 17 00:00:00 2001
+From: Richard Fitzgerald <rf@opensource.wolfsonmicro.com>
+Date: Tue, 3 Feb 2015 14:29:09 +0000
+Subject: [PATCH 11/25] mfd: arizona: Add DT entry for setting 32kHz clock
+ input
+
+Change-Id: Id2dea85398f9590727787cda36bd698c6ecde6e7
+Signed-off-by: Richard Fitzgerald <rf@opensource.wolfsonmicro.com>
+---
+ Documentation/devicetree/bindings/mfd/arizona.txt | 2 ++
+ drivers/mfd/arizona-core.c                        | 3 +++
+ 2 files changed, 5 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/mfd/arizona.txt b/Documentation/devicetree/bindings/mfd/arizona.txt
+index 2abd08022193..26ef3b9defdb 100644
+--- a/Documentation/devicetree/bindings/mfd/arizona.txt
++++ b/Documentation/devicetree/bindings/mfd/arizona.txt
+@@ -44,6 +44,8 @@ Required properties:
+ Optional properties:
+ 
+   - wlf,reset : GPIO specifier for the GPIO controlling /RESET
++  - wlf,clk32k-src : set input source for codec 32kHz clock.
++      0 = default, 1 = MCLK1, 2 = MCLK2, 3 = None
+ 
+   - wlf,micd-ranges : Microphone detection level and key configuration, this
+     field can be of variable length but should always be a multiple of 2 cells
+diff --git a/drivers/mfd/arizona-core.c b/drivers/mfd/arizona-core.c
+index 80a30d3e323d..badc52579c2f 100644
+--- a/drivers/mfd/arizona-core.c
++++ b/drivers/mfd/arizona-core.c
+@@ -946,6 +946,9 @@ static int arizona_of_get_core_pdata(struct arizona *arizona)
+ 			ret);
+ 	}
+ 
++	arizona_of_read_u32(arizona, "wlf,clk32k-src", false,
++				&pdata->clk32k_src);
++
+ 	arizona_of_get_micd_ranges(arizona, "wlf,micd-ranges");
+ 	arizona_of_get_micd_configs(arizona, "wlf,micd-configs");
+ 
+-- 
+2.10.1
+

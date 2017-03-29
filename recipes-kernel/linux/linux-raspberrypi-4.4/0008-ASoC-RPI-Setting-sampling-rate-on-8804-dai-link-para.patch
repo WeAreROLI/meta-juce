@@ -1,0 +1,54 @@
+From 25cde4bcd3280219bc8cfc3eae99b423ad692817 Mon Sep 17 00:00:00 2001
+From: bsapthagiri <sapthagiri.baratam@incubesol.com>
+Date: Thu, 27 Nov 2014 17:37:36 +0530
+Subject: [PATCH 08/25] ASoC: RPI: Setting sampling rate on 8804 dai link
+ params
+
+This patch is required on top of "ASOC: dapm: add param_fixup
+callback" patch to set the sampling rate on 8804 dai at runtime.
+
+Change-Id: I6aac7ea7dccb7f3f93160145e1173b9d28be848d
+Signed-off-by: bsapthagiri <sapthagiri.baratam@incubesol.com>
+---
+ sound/soc/bcm/rpi-cirrus-sound-pi.c | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+
+diff --git a/sound/soc/bcm/rpi-cirrus-sound-pi.c b/sound/soc/bcm/rpi-cirrus-sound-pi.c
+index cd8f00e90220..08090b3d6662 100644
+--- a/sound/soc/bcm/rpi-cirrus-sound-pi.c
++++ b/sound/soc/bcm/rpi-cirrus-sound-pi.c
+@@ -434,6 +434,23 @@ static int snd_rpi_wsp_hw_params(struct snd_pcm_substream *substream,
+ 	return 0;
+ }
+ 
++static int dai_link2_params_fixup(struct snd_soc_dapm_widget *w, int event)
++{
++	struct snd_soc_card *card = &snd_rpi_wsp;
++	struct wm5102_machine_priv *priv = snd_soc_card_get_drvdata(card);
++	struct snd_soc_pcm_stream *config = w->params;
++
++	if (event == SND_SOC_DAPM_PRE_PMU) {
++		config->rate_min = priv->wm8804_sr;
++		config->rate_max = priv->wm8804_sr;
++	} else if (event == SND_SOC_DAPM_PRE_PMD) {
++		config->rate_min = RPI_WLF_SR;
++		config->rate_max = RPI_WLF_SR;
++	}
++
++	return 0;
++}
++
+ static int snd_rpi_wsp_hw_free(struct snd_pcm_substream *substream)
+ {
+ 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
+@@ -498,6 +515,7 @@ static struct snd_soc_dai_link snd_rpi_wsp_dai[] = {
+ 			| SND_SOC_DAIFMT_CBM_CFM,
+ 		.ignore_suspend = 1,
+ 		.params = &dai_link2_params,
++		.params_fixup = dai_link2_params_fixup,
+ 	},
+ };
+ 
+-- 
+2.10.1
+

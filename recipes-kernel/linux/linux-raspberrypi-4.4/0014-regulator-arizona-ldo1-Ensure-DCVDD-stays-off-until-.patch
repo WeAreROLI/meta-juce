@@ -1,0 +1,27 @@
+From 980375bd37f722b309e15d629aa461b4628956cf Mon Sep 17 00:00:00 2001
+From: Charles Keepax <ckeepax@opensource.wolfsonmicro.com>
+Date: Tue, 20 Jan 2015 14:54:08 +0000
+Subject: [PATCH 14/25] regulator: arizona-ldo1: Ensure DCVDD stays off until
+ we assert it
+
+Change-Id: Ic15f623469c34a542df64c9ff78b566ddcda748d
+Signed-off-by: Charles Keepax <ckeepax@opensource.wolfsonmicro.com>
+---
+ drivers/regulator/arizona-ldo1.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/regulator/arizona-ldo1.c b/drivers/regulator/arizona-ldo1.c
+index f7c88ff90c43..19fdcd4f84af 100644
+--- a/drivers/regulator/arizona-ldo1.c
++++ b/drivers/regulator/arizona-ldo1.c
+@@ -288,6 +288,7 @@ static int arizona_ldo1_probe(struct platform_device *pdev)
+ 	}
+ 
+ 	config.ena_gpio = arizona->pdata.ldoena;
++	config.ena_gpio_flags = GPIOF_OUT_INIT_LOW;
+ 
+ 	if (arizona->pdata.ldo1)
+ 		config.init_data = arizona->pdata.ldo1;
+-- 
+2.10.1
+

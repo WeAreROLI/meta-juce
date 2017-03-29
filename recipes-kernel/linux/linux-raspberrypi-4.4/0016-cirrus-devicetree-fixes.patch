@@ -1,0 +1,42 @@
+From ecc160c1900ad0248aa86b5feb0af3dd180ecc81 Mon Sep 17 00:00:00 2001
+From: Matthias Reichl <hias@horus.com>
+Date: Thu, 28 May 2015 14:27:25 +0200
+Subject: [PATCH 16/25] cirrus: devicetree fixes
+
+- disable spidev0 in cirrus DT overlay, the CS0 line is used
+  for wm8804 reset
+
+- configure wm5102 interrupt pin in dtb (GPIO 27, active low
+  level triggered)
+---
+ arch/arm/boot/dts/overlays/rpi-cirrus-wm5102-overlay.dts | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/arch/arm/boot/dts/overlays/rpi-cirrus-wm5102-overlay.dts b/arch/arm/boot/dts/overlays/rpi-cirrus-wm5102-overlay.dts
+index 747fff162675..414570f26903 100644
+--- a/arch/arm/boot/dts/overlays/rpi-cirrus-wm5102-overlay.dts
++++ b/arch/arm/boot/dts/overlays/rpi-cirrus-wm5102-overlay.dts
+@@ -72,6 +72,10 @@
+ 			#size-cells = <0>;
+ 			status = "okay";
+ 
++			spidev@0{
++				status = "disabled";
++			};
++
+ 			spidev@1{
+ 				status = "disabled";
+ 			};
+@@ -83,6 +87,9 @@
+ 				#size-cells = <0>;
+ 				spi-max-frequency = <500000>;
+ 
++				interrupt-parent = <&gpio>;
++				interrupts = <27 8>;
++
+ 				LDOVDD-supply = <&ldo0>;
+ 				AVDD-supply = <&ldo0>;
+ 				DBVDD1-supply = <&ldo0>;
+-- 
+2.10.1
+

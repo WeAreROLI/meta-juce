@@ -1,0 +1,93 @@
+From e7abd2845c06764d57ccc23fde9a535c2bcf913b Mon Sep 17 00:00:00 2001
+From: bsapthagiri <sapthagiri.baratam@incubesol.com>
+Date: Tue, 3 Feb 2015 13:59:22 +0530
+Subject: [PATCH 12/25] mfd: arizona: Add dmic-ref device tree bindings
+
+Change-Id: I9d9baa8e70fde8b4af406fd07b687aa2a1871395
+Signed-off-by: bsapthagiri <sapthagiri.baratam@incubesol.com>
+---
+ Documentation/devicetree/bindings/mfd/arizona.txt |  6 ++++
+ drivers/mfd/arizona-core.c                        | 38 +++++++++++++++++++++++
+ 2 files changed, 44 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/mfd/arizona.txt b/Documentation/devicetree/bindings/mfd/arizona.txt
+index 26ef3b9defdb..4b3510a6ee32 100644
+--- a/Documentation/devicetree/bindings/mfd/arizona.txt
++++ b/Documentation/devicetree/bindings/mfd/arizona.txt
+@@ -68,6 +68,10 @@ Optional properties:
+     a value that is out of range for a 16 bit register then the chip default
+     will be used. If present exactly five values must be specified.
+ 
++  - wlf,dmic-ref : DMIC reference for each input, must contain four cells if
++    specified. 0 indicates MICVDD and is the default, 1,2,3 indicate the
++    respective MICBIAS.
++
+   - wlf,inmode : A list of INn_MODE register values, where n is the number
+     of input signals. Valid values are 0 (Differential), 1 (Single-ended) and
+     2 (Digital Microphone). If absent, INn_MODE registers set to 0 by default.
+@@ -124,4 +128,6 @@ codec: wm5102@1a {
+ 		ARIZONA_GP_DEFAULT
+ 		ARIZONA_GP_DEFAULT
+ 	>;
++
++	wlf,dmic-ref = <0 0 1 0>;
+ };
+diff --git a/drivers/mfd/arizona-core.c b/drivers/mfd/arizona-core.c
+index badc52579c2f..6d9778b05fe0 100644
+--- a/drivers/mfd/arizona-core.c
++++ b/drivers/mfd/arizona-core.c
+@@ -913,6 +913,41 @@ error:
+ 	return ret;
+ }
+ 
++static int arizona_of_read_u32_array(struct arizona *arizona,
++				     const char *prop, bool mandatory,
++				     u32 *data, size_t num)
++{
++	int ret;
++
++	ret = of_property_read_u32_array(arizona->dev->of_node, prop,
++					 data, num);
++
++	if (ret >= 0)
++		return 0;
++
++	switch (ret) {
++	case -EINVAL:
++		if (mandatory)
++			dev_err(arizona->dev,
++				"Mandatory DT property %s is missing\n",
++				prop);
++		break;
++	default:
++		dev_err(arizona->dev,
++			"DT property %s is malformed: %d\n",
++			prop, ret);
++	}
++
++	return ret;
++}
++
++static int arizona_of_read_u32(struct arizona *arizona,
++			       const char* prop, bool mandatory,
++			       u32 *data)
++{
++	return arizona_of_read_u32_array(arizona, prop, mandatory, data, 1);
++}
++
+ static int arizona_of_get_core_pdata(struct arizona *arizona)
+ {
+ 	struct arizona_pdata *pdata = &arizona->pdata;
+@@ -952,6 +987,9 @@ static int arizona_of_get_core_pdata(struct arizona *arizona)
+ 	arizona_of_get_micd_ranges(arizona, "wlf,micd-ranges");
+ 	arizona_of_get_micd_configs(arizona, "wlf,micd-configs");
+ 
++	arizona_of_read_u32_array(arizona, "wlf,dmic-ref", false,
++				  pdata->dmic_ref, ARRAY_SIZE(pdata->dmic_ref));
++
+ 	of_property_for_each_u32(arizona->dev->of_node, "wlf,inmode", prop,
+ 				 cur, val) {
+ 		if (count == ARRAY_SIZE(pdata->inmode))
+-- 
+2.10.1
+
